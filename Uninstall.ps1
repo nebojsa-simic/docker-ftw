@@ -1,8 +1,8 @@
 # https://stackoverflow.com/questions/7690994/running-a-command-as-administrator-using-powershell
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$PSCommandPath';`"";
-    Exit;
-}
+# if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+#     Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$PSCommandPath';`"";
+#     Exit;
+# }
 
 if ((wsl -l).contains("docker-ftw")) {
     wsl --unregister docker-ftw;
@@ -28,6 +28,8 @@ if ($userPath -ne $changedUserPath) {
     $env:PATH = [Environment]::GetEnvironmentVariable("PATH", "Machine")
     $env:PATH += ";$changedUserPath"
 }
+
+[Environment]::SetEnvironmentVariable("DOCKER_HOST", $null, 'User')
 
 Write-Host -NoNewLine "Docker-FTW uninstalled. Press 'any' key to exit ...";
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown");

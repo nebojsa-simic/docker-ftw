@@ -1,8 +1,8 @@
 # https://stackoverflow.com/questions/7690994/running-a-command-as-administrator-using-powershell
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$PSCommandPath';`"";
-    Exit
-}
+# if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+#     Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$PSCommandPath';`"";
+#     Exit
+# }
 
 $dockerFtwVersion = "0.0.1"
 $distro = "docker-ftw"
@@ -11,6 +11,15 @@ $alpineVersion = "3.15"
 $alpineVersionFull = "3.15.0"
 $dockerCliVersion = "20.10.9"
 $arch = "x86_64"
+$installLogFile = "install.log"
+
+function Log {
+    param([string] $Message)
+    Out-File -FilePath $installLogFile -InputObject $Message -Append
+    Write-Host $Message
+}
+
+Log -Message "Docker-FTW installation started: v$dockerFtwVersion"
 
 $ErrorActionPreference = "SilentlyContinue"
  
@@ -33,25 +42,25 @@ function CheckPortIsAvailable {
     return $true
 } 
 
-Write-Host "Docker-FTW running preflight checks"
+Log -Message "Docker-FTW running preflight checks"
 
 $dockerFtwAlreadyInstalled = (wsl -l).contains($distro)
 if ($dockerFtwAlreadyInstalled) {
-    Write-Host -NoNewLine "Docker-FTW already installed. Please uninstall and run the installer again ..."
+    Log -Message "Docker-FTW already installed. Please uninstall and run the installer again ..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Exit
 }
 
 $dockerPortAvailable = CheckPortIsAvailable -Port $dockerPort -Timeout 256
 if (!$dockerPortAvailable) {
-    Write-Host -NoNewLine "Something is already running on port $dockerPort. Please uninstall it and run the installer again ..."
+    Log -Message "Something is already running on port $dockerPort. Please uninstall it and run the installer again ..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Exit
 }
 
-Write-Host "Docker-FTW preflight checks succeded."
+Log -Message "Docker-FTW preflight checks succeded."
 
-Write-Host "Docker-FTW creating the `.docker-ftw` home folder in $HOME"
+Log -Message "Docker-FTW creating the `.docker-ftw` home folder in $HOME"
 
 $dockerFtwHome = "$HOME\\.docker-ftw\\"
 if (!(Test-Path -Path $dockerFtwHome)) {
@@ -61,10 +70,12 @@ if (!(Test-Path -Path $dockerFtwHome)) {
 $dockerFtwVersionFile = "$dockerFtwHome\\.version"
 Out-File -FilePath $dockerFtwVersionFile -InputObject $dockerFtwVersion -NoNewLine
 
-Write-Host "Docker-FTW installing docker daemon in the WSL2."
+Log -Message "Docker-FTW installing docker daemon in the WSL2."
 
 $dockerFtwTmp = "$dockerFtwHome\\tmp"
 mkdir -p $dockerFtwTmp
+
+Log -Message "Docker-FTW installing alpine $alpineVersion in the WSL2 $distro instance."
 
 $wslTar = "$dockerFtwTmp\\alpine-miniroot.tar.gz"
 if (!(Test-Path -Path $wslTar -PathType Leaf)) {
@@ -77,26 +88,31 @@ wsl --import $distro $wslHome $wslTar
 
 wsl --set-version $distro 2
 
+Log -Message "Docker-FTW installing docker-engine in the WSL2 $distro instance."
+
 wsl -d $distro apk update
 wsl -d $distro apk add docker-engine
 wsl -d $distro mkdir -p /etc/docker
 wsl -d $distro ash -c 'echo \"{\\\"tls\\\": false,\\\"hosts\\\": [\\\"tcp://0.0.0.0:2376\\\", \\\"unix:///var/run/docker.sock\\\"]}\" > /etc/docker/daemon.json'
+
+Log -Message "Docker-FTW starting dockerd"
+
 wsl -d $distro /usr/bin/nohup ash -c "/usr/bin/dockerd &"
 
-Write-Host "Docker-FTW installing docker daemon succeeded."
+Log -Message "Docker-FTW installing docker daemon succeeded."
 
-Write-Host "Docker-FTW setting the DOCKER_HOST environment variable."
+Log -Message "Docker-FTW setting the DOCKER_HOST environment variable."
 
-$dockerHost = [Environment]::GetEnvironmentVariable('DOCKER_HOST', 'Machine')
+$dockerHost = [Environment]::GetEnvironmentVariable('DOCKER_HOST', 'User')
 if ($dockerHost) {
-    Write-Host "Overwriting the DOCKER_HOST environment variable '$dockerHost' -> 'localhost:$dockerPort' ..."
+    Log -Message "Overwriting the DOCKER_HOST environment variable '$dockerHost' -> 'localhost:$dockerPort' ..."
 }
-[Environment]::SetEnvironmentVariable("DOCKER_HOST", "localhost:$dockerPort", 'Machine')
+[Environment]::SetEnvironmentVariable("DOCKER_HOST", "localhost:$dockerPort", 'User')
 
-Write-Host "Docker-FTW setting DOCKER_HOST environment variable succeeded."
+Log -Message "Docker-FTW setting DOCKER_HOST environment variable succeeded."
 
 if (!(Get-Command "docker.exe" -ErrorAction SilentlyContinue)) { 
-    Write-Host "Docker-FTW installing docker CLI."
+    Log -Message "Docker-FTW installing docker CLI v$dockerCliVersion."
     
     $dockerCliZip = "$dockerFtwTmp\\docker-cli.zip"
     $dockerCliSource = "https://download.docker.com/win/static/stable/$arch/docker-$dockerCliVersion.zip"
@@ -105,16 +121,16 @@ if (!(Get-Command "docker.exe" -ErrorAction SilentlyContinue)) {
     $dockerCliHome = "$dockerFtwHome\\docker-cli"
     Expand-Archive $dockerCliZip -DestinationPath $dockerCliHome
 
-    Write-Host "Docker-FTW adding docker CLI to path."
+    Log -Message "Docker-FTW adding docker CLI to path."
 
     $dockerCliPath = "$dockerCliHome\\docker"
-    $Env:PATH = $Env:PATH + "$dockerCliPath"
+    $Env:PATH = $Env:PATH + ";$dockerCliPath"
 	$userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 	[Environment]::SetEnvironmentVariable("PATH", "$userPath;$dockerCliPath", "User")
 
-    Write-Host "Docker-FTW docker CLI installed."
+    Log -Message "Docker-FTW docker CLI installed."
 }
 
-Write-Host -NoNewLine "You can now use docker. Press 'any' key to finish the installation."
+Log -Message "You can now use docker. Press 'any' key to finish the installation."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 Exit

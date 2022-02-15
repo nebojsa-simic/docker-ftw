@@ -9,9 +9,7 @@ I suggest using `Bypass` to bypass the policy and get the things installed.
 
 - Open a PowerShell console (Win + x, i)
 - Run `Set-ExecutionPolicy Bypass -Scope Process`
-- Next run `./Install.ps1`
-- Close the PowerShell console
-- Open a new PowerShell console (Win + x, i)
+- Run `./Install.ps1`
 - Run `docker run -it hello-world` to confirm it works
 
 ## Update
