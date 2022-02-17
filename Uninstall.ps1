@@ -1,8 +1,4 @@
-# https://stackoverflow.com/questions/7690994/running-a-command-as-administrator-using-powershell
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$PSCommandPath';`"";
-    Exit;
-}
+# . .\modules\Request-Elevation.ps1
 
 if ((wsl -l).contains("docker-ftw")) {
     wsl --unregister docker-ftw
@@ -11,6 +7,7 @@ if ((wsl -l).contains("docker-ftw")) {
 $WatchdogTaskName = "docker-ftw-watchdog"
 $WatchdogTask = Get-ScheduledTask | Where-Object { $_.TaskName -eq $WatchdogTaskName } | Select-Object -First 1
 if ($null -ne $WatchdogTask) {
+    # Request-Elevation -RequestCommandPath $PSCommandPath
     Unregister-ScheduledTask -TaskName "$WatchdogTaskName" -Confirm:$false
     # needs time to release it's grip on the folder
     Start-Sleep -Seconds 5

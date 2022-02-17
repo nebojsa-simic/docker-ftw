@@ -1,16 +1,15 @@
 # docker-ftw (Docker For The Windows)
 
-Setup Docker for Windows withut Docker Desktop.
+Setup Docker for Windows withut using Docker Desktop.
 
 ## Installation 
 
-With PowerShell, you must ensure Get-ExecutionPolicy is not Restricted. 
+With PowerShell, you must ensure that execution policy is not Restricted. 
 I suggest using `Bypass` to bypass the policy and get the things installed.
 
 - Open a PowerShell console (Win + x, i)
 - Run `Set-ExecutionPolicy Bypass -Scope Process`
 - Run `./Install.ps1`
-- Restart PowerShell
 - Run `docker run -it hello-world` to confirm it works
 
 ## Update/Upgrade

@@ -1,0 +1,10 @@
+$dockerFtwVersion = "0.0.1"
+$distro = "docker-ftw"
+$dockerPort = 2376
+$alpineVersion = "3.15"
+$alpineVersionFull = "3.15.0"
+$dockerCliVersion = "20.10.9"
+$arch = "x86_64"
+$logFile = "install.log"
+$watchdogTaskName = "docker-ftw-watchdog"
+$dockerFtwHome = "$HOME\.docker-ftw"
