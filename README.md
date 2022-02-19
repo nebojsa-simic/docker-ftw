@@ -7,10 +7,11 @@ Setup Docker for Windows withut using Docker Desktop.
 With PowerShell, you must ensure that execution policy is not Restricted. 
 I suggest using `Bypass` to bypass the policy and get the things installed.
 
+- Download `Installer-Bundle.ps1`
 - Open a PowerShell console (Win + x, i)
-- Run `Set-ExecutionPolicy Bypass -Scope Process`
-- Run `./Install.ps1`
-- Run `docker run -it hello-world` to confirm it works
+- Run ```Set-ExecutionPolicy Bypass -Scope Process```
+- Run ```./Installer-Bundle.ps1```
+- Run ```docker run -it hello-world``` to confirm it works
 
 ## Update/Upgrade
 

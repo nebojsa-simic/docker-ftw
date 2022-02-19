@@ -11,6 +11,7 @@ $ErrorActionPreference = "SilentlyContinue"
 . .\modules\Install-Docker-Engine.ps1
 . .\modules\Add-Watchdog.ps1
 . .\modules\Install-Docker-Cli.ps1
+. .\modules\Install-Portainer.ps1
 
 Log -Message "You can now use docker. Press 'any' key to finish the installation."
 Wait-For-Keypress
