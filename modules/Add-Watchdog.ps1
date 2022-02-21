@@ -12,7 +12,10 @@ $watchdogHome = "$dockerFtwHome\watchdog"
 New-Item -ItemType Directory -Force -Path $watchdogHome | Out-Null
 
 $watchdogScript = "$watchdogHome\Watchdog.ps1"
-Copy-Item -Path ".\Watchdog.ps1" -Destination $watchdogScript
+$watchdogScriptContent = @'
+. .\Watchdog.ps1
+'@
+Out-File -FilePath $watchdogScript -InputObject $watchdogScriptContent
 
 $watchdogVbsWrapper = @"
 CreateObject("Wscript.Shell").Run "Powershell.exe -NoProfile -WindowStyle Hidden -File $watchdogScript", 0, true   
