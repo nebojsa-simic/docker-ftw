@@ -1,13 +1,15 @@
-$dockerFtwVersion = "0.0.1"
+$dockerFtwVersion = "0.0.2"
 $distro = "docker-ftw"
 $dockerPort = 2376
-$alpineVersion = "3.15"
-$alpineVersionFull = "3.15.0"
-$dockerCliVersion = "20.10.9"
+$alpineVersion = "3.18"
+$alpineVersionFull = "3.18.2"
+$dockerCliVersion = "24.0.2"
+$buildxCliPluginVersion = "0.11.0"
 $arch = "x86_64"
 $logFile = "install.log"
 $watchdogTaskName = "docker-ftw-watchdog"
 $dockerFtwHome = "$HOME\.docker-ftw"
+$dockerHome = "$HOME\.docker"
 
 
 function Log {
@@ -104,13 +106,17 @@ wsl --set-version $distro 2
 Log -Message "Docker-FTW installing docker-engine in the WSL2 $distro instance."
 
 wsl -d $distro apk update
-wsl -d $distro apk add docker-engine
+wsl -d $distro apk add docker-engine docker-cli
 wsl -d $distro mkdir -p /etc/docker
-wsl -d $distro ash -c 'echo \"{\\\"tls\\\": false,\\\"hosts\\\": [\\\"tcp://0.0.0.0:2376\\\", \\\"unix:///var/run/docker.sock\\\"]}\" > /etc/docker/daemon.json'
+wsl -d $distro ash -c 'echo \"{\\\"experimental\\\": true,\\\"tls\\\": false,\\\"hosts\\\": [\\\"tcp://0.0.0.0:2376\\\", \\\"unix:///var/run/docker.sock\\\"]}\" > /etc/docker/daemon.json'
 
 Log -Message "Docker-FTW starting dockerd"
 
 wsl -d $distro /usr/bin/nohup ash -c "/usr/bin/dockerd &"
+Sleep -Seconds 5
+
+Log -Message "Docker-FTW installing binfmt for arm64 platform."
+wsl -d $distro docker run --privileged --rm tonistiigi/binfmt --install arm64
 
 Log -Message "Docker-FTW installing docker-engine succeeded."
 
@@ -123,6 +129,7 @@ if ($dockerHost) {
 [Environment]::SetEnvironmentVariable("DOCKER_HOST", "localhost:$dockerPort", 'User')
 
 Log -Message "Docker-FTW setting DOCKER_HOST environment variable succeeded."
+
 
 
 
@@ -275,6 +282,21 @@ if (!(Get-Command "docker.exe" -ErrorAction SilentlyContinue)) {
     $Env:PATH = $Env:PATH + ";$dockerCliPath"
 	$userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 	[Environment]::SetEnvironmentVariable("PATH", "$userPath;$dockerCliPath", "User")
+
+    Log -Message "Docker-FTW setting DOCKER_CLI_EXPERIMENTAL environment variable to `enabled`."
+
+    [Environment]::SetEnvironmentVariable("DOCKER_CLI_EXPERIMENTAL", "enabled", 'User')
+
+    Log -Message "Downloading buildx plugin."
+
+    $dockerConfigFolder = "$env:userprofile/.docker"
+    if(!(Test-Path $dockerConfigFolder)){ $null = new-item -Type Directory -Path $dockerConfigFolder}
+    $dockerCliPluginFolder = "$dockerConfigFolder/cli-plugins"
+    if(!(Test-Path $dockerCliPluginFolder)){ $null = new-item -Type Directory -Path $dockerCliPluginFolder}
+
+    $dockerBuildXExe = "$dockerCliPluginFolder\docker-buildx.exe"
+    $dockerBuildXSource = "https://github.com/docker/buildx/releases/download/v$buildxCliPluginVersion/buildx-v$buildxCliPluginVersion.windows-amd64.exe"
+    Start-BitsTransfer -Source $dockerBuildXSource -Destination $dockerBuildXExe
 
     Log -Message "Docker-FTW docker CLI installed."
 } else {

@@ -21,6 +21,21 @@ if (!(Get-Command "docker.exe" -ErrorAction SilentlyContinue)) {
 	$userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 	[Environment]::SetEnvironmentVariable("PATH", "$userPath;$dockerCliPath", "User")
 
+    Log -Message "Docker-FTW setting DOCKER_CLI_EXPERIMENTAL environment variable to `enabled`."
+
+    [Environment]::SetEnvironmentVariable("DOCKER_CLI_EXPERIMENTAL", "enabled", 'User')
+
+    Log -Message "Downloading buildx plugin."
+
+    $dockerConfigFolder = "$env:userprofile/.docker"
+    if(!(Test-Path $dockerConfigFolder)){ $null = new-item -Type Directory -Path $dockerConfigFolder}
+    $dockerCliPluginFolder = "$dockerConfigFolder/cli-plugins"
+    if(!(Test-Path $dockerCliPluginFolder)){ $null = new-item -Type Directory -Path $dockerCliPluginFolder}
+
+    $dockerBuildXExe = "$dockerCliPluginFolder\docker-buildx.exe"
+    $dockerBuildXSource = "https://github.com/docker/buildx/releases/download/v$buildxCliPluginVersion/buildx-v$buildxCliPluginVersion.windows-amd64.exe"
+    Start-BitsTransfer -Source $dockerBuildXSource -Destination $dockerBuildXExe
+
     Log -Message "Docker-FTW docker CLI installed."
 } else {
     Log -Message "Docker-FTW docker CLI is already installed, I am choosing to not overwrite it."

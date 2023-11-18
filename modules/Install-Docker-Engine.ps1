@@ -26,13 +26,17 @@ wsl --set-version $distro 2
 Log -Message "Docker-FTW installing docker-engine in the WSL2 $distro instance."
 
 wsl -d $distro apk update
-wsl -d $distro apk add docker-engine
+wsl -d $distro apk add docker-engine docker-cli
 wsl -d $distro mkdir -p /etc/docker
-wsl -d $distro ash -c 'echo \"{\\\"tls\\\": false,\\\"hosts\\\": [\\\"tcp://0.0.0.0:2376\\\", \\\"unix:///var/run/docker.sock\\\"]}\" > /etc/docker/daemon.json'
+wsl -d $distro ash -c 'echo \"{\\\"experimental\\\": true,\\\"tls\\\": false,\\\"hosts\\\": [\\\"tcp://0.0.0.0:2376\\\", \\\"unix:///var/run/docker.sock\\\"]}\" > /etc/docker/daemon.json'
 
 Log -Message "Docker-FTW starting dockerd"
 
 wsl -d $distro /usr/bin/nohup ash -c "/usr/bin/dockerd &"
+Sleep -Seconds 5
+
+Log -Message "Docker-FTW installing binfmt for arm64 platform."
+wsl -d $distro docker run --privileged --rm tonistiigi/binfmt --install arm64
 
 Log -Message "Docker-FTW installing docker-engine succeeded."
 
