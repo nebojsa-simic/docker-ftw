@@ -1,4 +1,4 @@
-$dockerFtwVersion = "0.1.0"
+$dockerFtwVersion = "0.3.0"
 $distro = "docker-ftw"
 $dockerPort = 2376
 $alpineVersion = "3.18"
